@@ -1,0 +1,14 @@
+.dock-label {
+	background-color: transparent;
+	color: white;
+	font-weight: bold;
+	margin: 0px;
+	padding: 0px;
+}
+
+.dock-label-body {
+	background-color: transparent;
+	color: white;
+	font-weight: bold;
+	padding: 1em;
+}
