@@ -61,6 +61,10 @@ import time
 import uinput
 import signal
 from signal import SIGTERM
+import threading
+
+CLIENT_TIMEOUT = 1800 # 30 mins
+MAX_CLIENTS = 16 # max number of active clients
 
 def shutdownServer(sig, dummy):
 	global server
@@ -234,6 +238,32 @@ class Button(object):
 	def getCode(self):
 		return self.__uinputCode
 
+class Client(object):
+
+	def __del__(self):
+		logging.debug('Deleting Client object for %s' % self.__ip)
+		del self.__device
+
+	def __init__(self, ip):
+		self.__ip = ip
+		self.__device = uinput.Device([uinput.BTN_JOYSTICK, uinput.BTN_DPAD_UP, uinput.BTN_DPAD_DOWN, uinput.BTN_DPAD_LEFT, uinput.BTN_DPAD_RIGHT, uinput.BTN_0, uinput.BTN_1, uinput.BTN_2, uinput.BTN_3, uinput.BTN_4, uinput.BTN_5, uinput.BTN_6, uinput.BTN_7], "pespad")
+		self.__lastContact = int(time.time())
+
+	def emit(self, btn, state):
+		self.__device.emit(btn, state)
+
+	def getDevice(self):
+		return self.__device
+
+	def getIp(self):
+		return self.__ip
+
+	def getLastContact(self):
+		return self.__lastContact
+
+	def updateContactTime(self):
+		self.__lastContact = int(time.time())
+
 class PESPadServer(Daemon):
 
 	def __init__(self, port, pidfile, loglevel, logfile=None):
@@ -245,6 +275,7 @@ class PESPadServer(Daemon):
 		self.__checkDir(self.__webroot)
 		self.__logfile = logfile
 		self.__loglevel = loglevel
+		self.__socket = None
 
 		# BTN mappings:
 		# BTN_JOYSTICK = Exit
@@ -272,7 +303,8 @@ class PESPadServer(Daemon):
 		self.__jsMap['left'] = Button(uinput.BTN_DPAD_LEFT)
 		self.__jsMap['right'] = Button(uinput.BTN_DPAD_RIGHT)
 
-		self.__devices = {}
+		self.__clients = {}
+		self.__clientCleanUpThread = None
 
 	def __checkDir(self, dir):
 		if not os.path.exists(dir):
@@ -293,6 +325,38 @@ class PESPadServer(Daemon):
 		s += "Server: PES HTTP Server\n"
 		s += "Connection: close\n\n"
 		return s
+
+	def createSocket(self):
+		if self.__logfile:
+			# remove old log file
+			if os.path.exists(self.__logfile):
+				os.remove(self.__logfile)
+			logging.basicConfig(format='%(asctime)s:%(levelname)s: %(message)s', datefmt='%Y/%m/%d %H:%M:%S', filename=self.__logfile, level=self.__loglevel)
+			logging.debug("Created new log file")
+		else:
+			logging.basicConfig(format='%(asctime)s:%(levelname)s: %(message)s', datefmt='%Y/%m/%d %H:%M:%S', level=self.__loglevel)
+
+		# try to get the socket before daemonizing
+		self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		i = 0
+		acquired = False
+		while i < 10:
+			try:
+				logging.info('Attempting to launching HTTP server on %s:%d' % (self.__host, self.__port))
+				self.__socket.bind((self.__host, self.__port))
+				logging.info('Success!')
+				acquired = True
+				break
+			except Exception, e:
+				logging.info("Could not acquire port %d (attempt #%d)" % (self.__port, i + 1))
+
+			time.sleep(1)
+			i += 1
+
+		if not acquired:
+			logging.critical("Could not acquire port after %d attempts!" % i)
+			sys.stderr.write("Could not acquire port after %d attempts!\n" % i)
+			sys.exit(1)
 
 	def __exit(self, msg):
 		print msg
@@ -324,36 +388,37 @@ class PESPadServer(Daemon):
 					btnStr = f[4:]
 					if btnStr == 'connect':
 						# a JS device has been requested
-						if not ip in self.__devices:
+						if not ip in self.__clients:
 							logging.info("Creating device for %s" % ip)
 							try:
-								self.__devices[ip] = uinput.Device([uinput.BTN_JOYSTICK, uinput.BTN_DPAD_UP, uinput.BTN_DPAD_DOWN, uinput.BTN_DPAD_LEFT, uinput.BTN_DPAD_RIGHT, uinput.BTN_0, uinput.BTN_1, uinput.BTN_2, uinput.BTN_3, uinput.BTN_4, uinput.BTN_5, uinput.BTN_6, uinput.BTN_7], "pespad")
+								self.__clients[ip] = Client(ip)
 								content = "{ \"success\": true }\n"
 							except Exception, e:
+								logging.debug("Exception occurred when trying to create device:\n%s" % e)
 								content = "{ \"success\": false, \"error\": \"Could not create uinput device!\" }"
 						else:
 							content = "{ \"success\": true }\n"
 						headers = self.__createHeaders(200)
 					elif btnStr == 'disconnect':
 						headers = self.__createHeaders(200)
-						if not ip in self.__devices:
+						if not ip in self.__clients:
 							content = "{ \"success\": true }"
 						else:
-							del self.__devices[ip]
+							self.removeClient(ip)
 							content = "{ \"success\": true }"
 					elif not btnStr in self.__jsMap:
 						logging.debug("Unknown button: %s from %s" % (btnStr, ip))
 						headers, content = self.__pageNotFound(f)
 					else:
 						headers = self.__createHeaders(200)
-						if not ip in self.__devices:
+						if not ip in self.__clients:
 							logging.info("No device found for %s - ignoring request" % ip)
 							headers = self.__createHeaders(200)
 							content = "{ \"success\": false, \"error\": \"Device not recognised, please refresh your browser\" }\n"
 						else:
 							btn = self.__jsMap[btnStr]
 							logging.debug("%s button press processed for %s" % (btnStr, ip))
-							self.__devices[ip].emit(btn.getCode(), int(btn.changeState()))
+							self.__clients[ip].emit(btn.getCode(), int(btn.changeState()))
 							content = "{ \"success\": true }\n"
 				else:
 					if f == '/':
@@ -381,19 +446,38 @@ class PESPadServer(Daemon):
 			else:
 				logging.info("Unknown/unsupported request method: %s" % requestMethod)
 
+	def getClients(self):
+		return self.__clients
+
 	def __pageNotFound(self, f):
 		headers = self.__createHeaders(404)
 		content = b"<html><head><title>File not found</title><head><body>File %s not found on this server</body></html>" % f
 		return (headers, content)
 
+	def removeClient(self, ip):
+		if ip in self.__clients:
+			logging.info('Removing joystick device for client %s' % ip)
+			del self.__clients[ip]
+
 	def restart(self):
 		sys.stderr.write("restart operation is not supported by PASPad server. Please stop the server yourself and then try to restart. This is beause the port takes time to free\n")
 
 	def run(self):
+		if not self.__socket:
+			logging.critical("socket not created - did you call createSocket first?")
+			logging.shutdown()
+			sys.exit(1)
+
+		# start client cleanup thread
+		self.__clientCleanUpThread = ClientCleanUpThread(self)
+		self.__clientCleanUpThread.start()
 		self.__listen()
 
 	def shutdown(self):
 		try:
+			logging.debug('Stopping clean up thread...')
+			if self.__clientCleanUpThread:
+				self.__clientCleanUpThread.stop()
 			logging.info('Stopping the server...')
 			self.__socket.shutdown(socket.SHUT_RDWR)
 			logging.info('Success!')
@@ -407,42 +491,53 @@ class PESPadServer(Daemon):
 			logging.shutdown()
 			sys.exit(1)
 
-		if self.__logfile:
-			# remove old log file
-			if os.path.exists(self.__logfile):
-				os.remove(self.__logfile)
-			logging.basicConfig(format='%(asctime)s:%(levelname)s: %(message)s', datefmt='%Y/%m/%d %H:%M:%S', filename=self.__logfile, level=self.__loglevel)
-			logging.debug("Created new log file")
-		else:
-			logging.basicConfig(format='%(asctime)s:%(levelname)s: %(message)s', datefmt='%Y/%m/%d %H:%M:%S', level=self.__loglevel)
-
-		# try to get the socket before daemonizing
-		self.__socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		i = 0
-		acquired = False
-		while i < 10:
-			try:
-				logging.info('Attempting to launching HTTP server on %s:%d' % (self.__host, self.__port))
-				self.__socket.bind((self.__host, self.__port))
-				logging.info('Success!')
-				acquired = True
-				break
-			except Exception, e:
-				logging.info("Could not acquire port %d" % self.__port)
-				#self.shutdown()
-				#logging.shutdown()
-				#sys.exit(1)
-			time.sleep(1)
-			i += 1
-
-		if not acquired:
-			logging.critical("Could not acquire port after %d attempts!" % i)
-			sys.stderr.write("Could not acquire port after %d attempts!\n" % i)
-			sys.exit(1)
-
+		self.createSocket()
 		self.daemonize()
 		self.run()
-			
+
+class ClientCleanUpThread(threading.Thread):
+	def __init__(self, server):
+		threading.Thread.__init__(self)
+		self.__stop = False
+		self.__sleep = 10
+		self.__server = server
+		logging.debug('ClientCleanUpThread created')
+
+	def run(self):
+		logging.debug('ClientCleanUp thread started')
+
+		while True:
+			if self.__stop:
+				logging.debug('ClientCleanUp thread stopped')
+				return
+
+			now = time.time()
+
+			clients =  self.__server.getClients()
+			logging.debug('Checking %d client(s) for recent activity' % len(clients))
+
+			clientsToDelete = [] # can't modify dictionary whilst iterating over it so use a list to store candidates
+
+			client = None
+
+			for client in clients.itervalues():
+				ip = client.getIp()
+				if now - client.getLastContact() > CLIENT_TIMEOUT:
+					clientsToDelete.append(ip)
+				else:
+					logging.debug('Client %s is still active' % ip)
+
+			del client # remove reference to object so that it can be delete later
+
+			if len(clientsToDelete) > 0:
+				for ip in clientsToDelete:
+					self.__server.removeClient(ip)
+
+			time.sleep(self.__sleep)
+
+
+	def stop(self):
+		self.__stop = True
 
 if __name__ == "__main__":
 
@@ -479,6 +574,7 @@ if __name__ == "__main__":
 	else:
 		signal.signal(signal.SIGTERM, shutdownServer)
 		signal.signal(signal.SIGINT, shutdownServer)
+		server.createSocket()
 		server.run()
 
 	logging.shutdown()
