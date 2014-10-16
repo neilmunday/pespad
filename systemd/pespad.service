@@ -1,0 +1,12 @@
+[Unit]
+Description=PESPad
+After=network-online.target
+
+[Service]
+Type=forking
+PIDFile=/tmp/pespad.pid
+ExecStart=/opt/pespad/pespad.py -l /var/log/pespad.log -p 80 -d start
+
+[Install]
+WantedBy=WantedBy=multi-user.target
+
