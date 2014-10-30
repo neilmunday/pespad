@@ -46,68 +46,38 @@ new Ext.Application({
 			});
 		}
 
-		function createBtn(text, action, width, height, margin, doNotRenderTo){
+		function createBtn(text, action, width, height, margin){
 			if (!margin){
 				margin = 0;
 			}
 
-			if (doNotRenderTo){
-				return new Ext.Button({
-					height: height,
-					listeners: {
-						render: function(){
-							el = this.getEl().dom;
-							if (el.addEventListener){
-								el.addEventListener('mousedown', function(){ btnPress(action) }, false);
-								el.addEventListener('mouseup', function(){ btnPress(action) }, false);
-								el.addEventListener('touchstart', function(){ btnPress(action) }, false);
-								el.addEventListener('touchend', function(){ btnPress(action) }, false);
-							}
-							else{
-								el.attachEvent('mousedown', function(){ btnPress(action) });
-								el.attachEvent('mouseup', function(){ btnPress(action) });
-								el.attachEvent('touchstart', function(){ btnPress(action) });
-								el.attachEvent('touchend', function(){ btnPress(action) });
-							}
+			return new Ext.Button({
+				height: height,
+				listeners: {
+					render: function(){
+						el = this.getEl().dom;
+						if (el.addEventListener){
+							el.addEventListener('mousedown', function(){ btnPress(action) }, false);
+							el.addEventListener('mouseup', function(){ btnPress(action) }, false);
+							el.addEventListener('touchstart', function(){ btnPress(action) }, false);
+							el.addEventListener('touchend', function(){ btnPress(action) }, false);
 						}
-					},
-					style: {
-						margin: margin + 'px'
-					},
-					text: text,
-					ui: 'small',
-					width: width
-				});
-			}
-			else{
-				return new Ext.Button({
-					height: height,
-					listeners: {
-						render: function(){
-							el = this.getEl().dom;
-							if (el.addEventListener){
-								el.addEventListener('mousedown', function(){ btnPress(action) }, false);
-								el.addEventListener('mouseup', function(){ btnPress(action) }, false);
-								el.addEventListener('touchstart', function(){ btnPress(action) }, false);
-								el.addEventListener('touchend', function(){ btnPress(action) }, false);
-							}
-							else{
-								el.attachEvent('mousedown', function(){ btnPress(action) });
-								el.attachEvent('mouseup', function(){ btnPress(action) });
-								el.attachEvent('touchstart', function(){ btnPress(action) });
-								el.attachEvent('touchend', function(){ btnPress(action) });
-							}
+						else{
+							el.attachEvent('mousedown', function(){ btnPress(action) });
+							el.attachEvent('mouseup', function(){ btnPress(action) });
+							el.attachEvent('touchstart', function(){ btnPress(action) });
+							el.attachEvent('touchend', function(){ btnPress(action) });
 						}
-					},
-					renderTo: action + 'Btn',
-					style: {
-						margin: margin + 'px'
-					},
-					text: text,
-					ui: 'small',
-					width: width
-				});
-			}
+					}
+				},
+				renderTo: action + 'Btn',
+				style: {
+					margin: margin + 'px'
+				},
+				text: text,
+				ui: 'small',
+				width: width
+			});
 		}
 
 		function mouseDown(event){
@@ -120,12 +90,6 @@ new Ext.Application({
 
 		var btnWidth = 40;
 		var btnHeight = 40;
-
-
-		l2Btn = createBtn('L2', 'l2shoulder', btnWidth * 2, btnHeight, 5, true);
-		l1Btn = createBtn('L1', 'l1shoulder', btnWidth * 2, btnHeight, 5, true);	
-		r1Btn = createBtn('R1', 'r1shoulder', btnWidth * 2, btnHeight, 5, true);
-		r2Btn = createBtn('R2', 'r2shoulder', btnWidth * 2, btnHeight, 5, true);
 
 		var joystickPanel = new Ext.Panel({
 			dockedItems: [
@@ -191,23 +155,13 @@ new Ext.Application({
 			id: 'joystickPanel',
 			items: [
 				{
-					flex: 0.1,
-					items: [
-						l2Btn,
-						l1Btn,
-						{
-							xtype: 'spacer'
-						},
-						r1Btn,
-						r2Btn
-					],
-					layout: {
-						type: 'hbox'
-					},
-					width: '100%',
+					height: 40,
+					contentEl: 'shoulderButtons',
 					xtype: 'panel'
-				},{
-					flex: 1,
+				},
+				{
+				
+					height: 100,
 					items: [
 						{
 							flex: 1,
@@ -233,6 +187,7 @@ new Ext.Application({
 			],
 			layout: {
 				align: 'center',
+				pack: 'start',
 				type: 'vbox'
 			}
 		});
@@ -250,5 +205,9 @@ new Ext.Application({
 		createBtn('>', 'right', btnWidth, btnHeight);
 		createBtn('/\\', 'up', btnWidth, btnHeight);
 		createBtn('\\/', 'down', btnWidth, btnHeight);
+		createBtn('L2', 'l2shoulder', btnWidth * 2, btnHeight, 5);
+		createBtn('L1', 'l1shoulder', btnWidth * 2, btnHeight, 5);	
+		createBtn('R1', 'r1shoulder', btnWidth * 2, btnHeight, 5);
+		createBtn('R2', 'r2shoulder', btnWidth * 2, btnHeight, 5);
 	}
 });
