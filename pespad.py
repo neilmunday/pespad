@@ -246,7 +246,7 @@ class Client(object):
 
 	def __init__(self, ip):
 		self.__ip = ip
-		self.__device = uinput.Device([uinput.BTN_JOYSTICK, uinput.BTN_DPAD_UP, uinput.BTN_DPAD_DOWN, uinput.BTN_DPAD_LEFT, uinput.BTN_DPAD_RIGHT, uinput.BTN_0, uinput.BTN_1, uinput.BTN_2, uinput.BTN_3, uinput.BTN_4, uinput.BTN_5, uinput.BTN_6, uinput.BTN_7], "pespad")
+		self.__device = uinput.Device([uinput.BTN_JOYSTICK, uinput.BTN_DPAD_UP, uinput.BTN_DPAD_DOWN, uinput.BTN_DPAD_LEFT, uinput.BTN_DPAD_RIGHT, uinput.BTN_START, uinput.BTN_SELECT, uinput.BTN_0, uinput.BTN_1, uinput.BTN_2, uinput.BTN_3, uinput.BTN_4, uinput.BTN_5, uinput.BTN_6, uinput.BTN_7, uinput.BTN_8, uinput.BTN_9], "pespad")
 		self.__lastContact = int(time.time())
 
 	def emit(self, btn, state):
@@ -279,25 +279,31 @@ class PESPadServer(Daemon):
 
 		# BTN mappings:
 		# BTN_JOYSTICK = Exit
-		# 0 = Start
-		# 1 = Select
+		# 0 = Load state
+		# 1 = Save state
 		# 2 = A
 		# 3 = B
 		# 4 = X
 		# 5 = Y
 		# 6 = left shoulder
 		# 7 = right shoulder
+		# 8 = left shoulder 2
+		# 9 = right shoulder 2
 
 		self.__jsMap = {}
 		self.__jsMap['exit'] = Button(uinput.BTN_JOYSTICK)
-		self.__jsMap['start'] = Button(uinput.BTN_0)
-		self.__jsMap['select'] = Button(uinput.BTN_1)
+		self.__jsMap['start'] = Button(uinput.BTN_START)
+		self.__jsMap['select'] = Button(uinput.BTN_SELECT)
+		self.__jsMap['load'] = Button(uinput.BTN_0)
+		self.__jsMap['save'] = Button(uinput.BTN_1)
 		self.__jsMap['a'] = Button(uinput.BTN_2)
 		self.__jsMap['b'] = Button(uinput.BTN_3)
 		self.__jsMap['x'] = Button(uinput.BTN_4)
 		self.__jsMap['y'] = Button(uinput.BTN_5)
-		self.__jsMap['lshoulder'] = Button(uinput.BTN_6)
-		self.__jsMap['rshoulder'] = Button(uinput.BTN_7)
+		self.__jsMap['l1shoulder'] = Button(uinput.BTN_6)
+		self.__jsMap['r1shoulder'] = Button(uinput.BTN_7)
+		self.__jsMap['l2shoulder'] = Button(uinput.BTN_8)
+		self.__jsMap['r2shoulder'] = Button(uinput.BTN_9)
 		self.__jsMap['up'] = Button(uinput.BTN_DPAD_UP)
 		self.__jsMap['down'] = Button(uinput.BTN_DPAD_DOWN)
 		self.__jsMap['left'] = Button(uinput.BTN_DPAD_LEFT)

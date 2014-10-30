@@ -46,31 +46,68 @@ new Ext.Application({
 			});
 		}
 
-		function createBtn(text, action, width, height){
-			return new Ext.Button({
-				height: height,
-				listeners: {
-					render: function(){
-						el = this.getEl().dom;
-						if (el.addEventListener){
-							el.addEventListener('mousedown', function(){ btnPress(action) }, false);
-							el.addEventListener('mouseup', function(){ btnPress(action) }, false);
-							el.addEventListener('touchstart', function(){ btnPress(action) }, false);
-							el.addEventListener('touchend', function(){ btnPress(action) }, false);
+		function createBtn(text, action, width, height, margin, doNotRenderTo){
+			if (!margin){
+				margin = 0;
+			}
+
+			if (doNotRenderTo){
+				return new Ext.Button({
+					height: height,
+					listeners: {
+						render: function(){
+							el = this.getEl().dom;
+							if (el.addEventListener){
+								el.addEventListener('mousedown', function(){ btnPress(action) }, false);
+								el.addEventListener('mouseup', function(){ btnPress(action) }, false);
+								el.addEventListener('touchstart', function(){ btnPress(action) }, false);
+								el.addEventListener('touchend', function(){ btnPress(action) }, false);
+							}
+							else{
+								el.attachEvent('mousedown', function(){ btnPress(action) });
+								el.attachEvent('mouseup', function(){ btnPress(action) });
+								el.attachEvent('touchstart', function(){ btnPress(action) });
+								el.attachEvent('touchend', function(){ btnPress(action) });
+							}
 						}
-						else{
-							el.attachEvent('mousedown', function(){ btnPress(action) });
-							el.attachEvent('mouseup', function(){ btnPress(action) });
-							el.attachEvent('touchstart', function(){ btnPress(action) });
-							el.attachEvent('touchend', function(){ btnPress(action) });
+					},
+					style: {
+						margin: margin + 'px'
+					},
+					text: text,
+					ui: 'small',
+					width: width
+				});
+			}
+			else{
+				return new Ext.Button({
+					height: height,
+					listeners: {
+						render: function(){
+							el = this.getEl().dom;
+							if (el.addEventListener){
+								el.addEventListener('mousedown', function(){ btnPress(action) }, false);
+								el.addEventListener('mouseup', function(){ btnPress(action) }, false);
+								el.addEventListener('touchstart', function(){ btnPress(action) }, false);
+								el.addEventListener('touchend', function(){ btnPress(action) }, false);
+							}
+							else{
+								el.attachEvent('mousedown', function(){ btnPress(action) });
+								el.attachEvent('mouseup', function(){ btnPress(action) });
+								el.attachEvent('touchstart', function(){ btnPress(action) });
+								el.attachEvent('touchend', function(){ btnPress(action) });
+							}
 						}
-					}
-				},
-				renderTo: action + 'Btn',
-				text: text,
-				ui: 'round',
-				width: width
-			});
+					},
+					renderTo: action + 'Btn',
+					style: {
+						margin: margin + 'px'
+					},
+					text: text,
+					ui: 'small',
+					width: width
+				});
+			}
 		}
 
 		function mouseDown(event){
@@ -81,8 +118,14 @@ new Ext.Application({
 			console.log('mouse up');
 		}
 
-		var btnWidth = 55;
-		var btnHeight = 55;
+		var btnWidth = 40;
+		var btnHeight = 40;
+
+
+		l2Btn = createBtn('L2', 'l2shoulder', btnWidth * 2, btnHeight, 5, true);
+		l1Btn = createBtn('L1', 'l1shoulder', btnWidth * 2, btnHeight, 5, true);	
+		r1Btn = createBtn('R1', 'r1shoulder', btnWidth * 2, btnHeight, 5, true);
+		r2Btn = createBtn('R2', 'r2shoulder', btnWidth * 2, btnHeight, 5, true);
 
 		var joystickPanel = new Ext.Panel({
 			dockedItems: [
@@ -148,28 +191,57 @@ new Ext.Application({
 			id: 'joystickPanel',
 			items: [
 				{
-					flex: 1,
-					contentEl: 'dpad',
+					flex: 0.1,
+					items: [
+						l2Btn,
+						l1Btn,
+						{
+							xtype: 'spacer'
+						},
+						r1Btn,
+						r2Btn
+					],
+					layout: {
+						type: 'hbox'
+					},
+					width: '100%',
 					xtype: 'panel'
 				},{
 					flex: 1,
-					contentEl: 'startSelect',
-					xtype: 'panel'
-				},{
-					flex: 1,
-					contentEl: 'buttons',
+					items: [
+						{
+							flex: 1,
+							contentEl: 'dpad',
+							xtype: 'panel'
+						},{
+							flex: 1,
+							contentEl: 'startSelect',
+							xtype: 'panel'
+						},{
+							flex: 1,
+							contentEl: 'buttons',
+							xtype: 'panel'
+						}
+					],
+					layout: {
+						align: 'center',
+						type: 'hbox'
+					},
+					width: '100%',
 					xtype: 'panel'
 				}
 			],
 			layout: {
 				align: 'center',
-				type: 'hbox'
+				type: 'vbox'
 			}
 		});
 
-		createBtn('Start', 'start', 100, btnHeight);
-		createBtn('Select', 'select', 100, btnHeight);
-		createBtn('Exit', 'exit', 100, btnHeight);
+		createBtn('Start', 'start', 55, 30, 5);
+		createBtn('Select', 'select', 55, 30, 5);
+		createBtn('Exit', 'exit', 55, 30, 5);
+		createBtn('Save', 'save', 55, 30, 5);
+		createBtn('Load', 'load', 55, 30, 5);
 		createBtn('A', 'a', btnWidth, btnHeight);
 		createBtn('B', 'b', btnWidth, btnHeight);
 		createBtn('X', 'x', btnWidth, btnHeight);
