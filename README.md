@@ -10,37 +10,37 @@ Install the python-pip package for your distribution first (if you don't have it
 
 Then install the python-uinput module (if you don't have it already):
 
- sudo pip python-uinput
+    sudo pip python-uinput
 
 Download PESPad:
 
- git clone git://github.com/neilmunday/pespad
+    git clone git://github.com/neilmunday/pespad
 
 Install PESPad (for operating systems using systemd):
 
- sudo mkdir /opt/pespad
- cd pespad
- sudo cp -r pespad.py web /opt/pespad
- sudo cp pespad/systemd/pespad.service /etc/systemd/system/pespad.service
+    sudo mkdir /opt/pespad
+    cd pespad
+    sudo cp -r pespad.py web /opt/pespad
+    sudo cp pespad/systemd/pespad.service /etc/systemd/system/pespad.service
 
 Enabling PESPad Service
 -----------------------
 
 To start PESPad:
 
- sudo systemctl start pespad.service
+    sudo systemctl start pespad.service
 
 To stop PESPad:
 
- sudo systemctl stop pespad.service
+    sudo systemctl stop pespad.service
 
 To start PESPad at boot time:
 
- sudo systemctl enable pespad.service
+    sudo systemctl enable pespad.service
 
 To disable PESPad at boot time:
 
- sudo systemctl disable pespad.service
+    sudo systemctl disable pespad.service
 
 Changing the port that PESPad listens on
 ----------------------------------------
@@ -52,7 +52,7 @@ Debugging
 
 To enable debug messages, please edit /etc/systemd/system/pespad.service and add "-v" to the Exec start line. Then restart the pespad service:
 
- sudo systemctl restart pespad.service
+    sudo systemctl restart pespad.service
 
 The log file can be found at: /var/log/pespad.log
 
