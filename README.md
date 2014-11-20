@@ -3,6 +3,8 @@ pespad
 
 PESPad allows you to use any device that can run a web browser to be used as a control pad for a Linux based operating systems. For example, you can use your mobile phone and tablet as separate controllers!!
 
+![PESPad GUI](http://pes.mundayweb.com/html/_images/pespad.png)
+
 Installation
 ------------
 
