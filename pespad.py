@@ -466,7 +466,7 @@ class PESPadServer(Daemon):
 			del self.__clients[ip]
 
 	def restart(self):
-		sys.stderr.write("restart operation is not supported by PASPad server. Please stop the server yourself and then try to restart. This is beause the port takes time to free\n")
+		sys.stderr.write("restart operation is not supported by PESPad server. Please stop the server yourself and then try to restart. This is beause the port takes time to free\n")
 
 	def run(self):
 		if not self.__socket:
