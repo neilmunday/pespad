@@ -3,8 +3,6 @@ pespad
 
 PESPad allows you to use any device that can run a web browser to be used as a control pad for a Linux based operating systems. For example, you can use your mobile phone and tablet as separate controllers!!
 
-![PESPad GUI](http://pes.mundayweb.com/html/_images/pespad.png)
-
 Installation
 ------------
 
@@ -73,4 +71,11 @@ Notes:
 -----
 
 After 30 minutes of inactivity a joystick will be automatically disconnected.
+
+Acknowledgements:
+-----------------
+
+* HTTP server code based on code from: http://blog.wachowicz.eu/?p=256
+* Daemon class based on code from: http://www.jejik.com/articles/2007/02/a_simple_unix_linux_daemon_in_python/
+* Sencha for their SenchaTouch 1.1 JavaScript framework
 
