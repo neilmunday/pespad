@@ -12,7 +12,7 @@ Install the python-pip package for your distribution first (if you don't have it
 
 Then install the python-uinput module (if you don't have it already):
 
-    sudo pip python-uinput
+    sudo pip install python-uinput
 
 Download PESPad:
 
@@ -23,7 +23,7 @@ Install PESPad (for operating systems using systemd):
     sudo mkdir /opt/pespad
     cd pespad
     sudo cp -r pespad.py web /opt/pespad
-    sudo cp pespad/systemd/pespad.service /etc/systemd/system/pespad.service
+    sudo cp systemd/pespad.service /etc/systemd/system/pespad.service
 
 Enabling PESPad Service
 -----------------------
